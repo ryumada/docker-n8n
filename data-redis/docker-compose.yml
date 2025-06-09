@@ -1,0 +1,15 @@
+services:
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - n8n-network
+
+networks:
+  n8n-network:
+    external: true
+
+volumes:
+  redis_data:

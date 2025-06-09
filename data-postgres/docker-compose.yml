@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:14
+    restart: always
+    env_file:
+      - ../.env
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_NON_ROOT_USER
+      - POSTGRES_NON_ROOT_PASSWORD
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - n8n-network
+
+networks:
+  n8n-network:
+    external: true
+
+volumes:
+  postgres_data:

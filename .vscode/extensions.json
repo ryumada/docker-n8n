@@ -1,0 +1,21 @@
+{
+    "recommendations": [
+        "dmitrydorofeev.empty-indent",
+        "dotenv.dotenv-vscode",
+        "formulahendry.code-runner",
+        "foxundermoon.shell-format",
+        "jeff-hykin.better-dockerfile-syntax",
+        "jeff-hykin.better-shellscript-syntax",
+        "mads-hartmann.bash-ide-vscode",
+        "mechatroner.rainbow-csv",
+        "meezilla.json",
+        "meronz.manpages",
+        "remisa.shellman",
+        "rogalmic.bash-debug",
+        "ryu1kn.edit-with-shell",
+        "tetradresearch.vscode-h2o",
+        "timonwong.shellcheck",
+        "woozy-masta.shell-script-ide",
+        "xshrim.txt-syntax",
+    ]
+}
