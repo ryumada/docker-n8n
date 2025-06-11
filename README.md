@@ -62,7 +62,7 @@ This special network will span all machines in the swarm, encrypting all applica
 
 1.  **On your Main VPS (VPS 1):**
     ```bash
-    docker network create --driver overlay --opt encrypted n8n-network
+    docker network create --driver overlay --opt encrypted --attachable n8n-network
     ```
 
 ---
