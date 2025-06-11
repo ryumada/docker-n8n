@@ -8,6 +8,8 @@ services:
       - "443:443"
     env_file:
       - ../.env
+    environment:
+      - SSL_EMAIL
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
