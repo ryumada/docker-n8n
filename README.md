@@ -156,6 +156,92 @@ After a few moments for the proxy to acquire an SSL certificate, your setup shou
 
 ---
 
+## Troubleshooting & Advanced Setup
+
+### Issue: "context deadline exceeded" Error
+
+If your `docker-compose up` command fails with a `context deadline exceeded` error, it means the nodes cannot communicate over the required ports. This is almost always due to a **firewall managed by your cloud provider** that is blocking the traffic before it reaches your server's `ufw` firewall.
+
+**If you cannot modify your cloud provider's firewall rules, the best solution is to create a VPN tunnel between your nodes using WireGuard.**
+
+### Alternative Setup: Using WireGuard VPN
+
+Follow these steps **instead of Step 3 (Configure Firewall Rules)** if you need to bypass your cloud provider's network restrictions.
+
+#### 1. Install WireGuard
+Run this on **every VPS** in your cluster.
+```bash
+sudo apt update && sudo apt install wireguard -y
+```
+
+#### 2. Generate Keys for Each VPS
+On **each VPS**, generate a unique key pair.
+```bash
+cd /etc/wireguard/ && umask 077
+wg genkey > private.key
+wg pubkey < private.key > public.key
+```
+**Action:** Note down the `public.key` from every server.
+
+#### 3. Configure WireGuard
+Decide on a private IP scheme (e.g., `10.0.0.1` for manager, `10.0.0.2` for worker, etc.).
+
+**On VPS-1 (Manager), create `/etc/wireguard/wg0.conf`:**
+```ini
+[Interface]
+Address = 10.0.0.1/24
+PrivateKey = <PASTE_PRIVATE_KEY_OF_VPS_1>
+ListenPort = 51820
+
+# --- Peer for each worker node ---
+[Peer]
+PublicKey = <PASTE_PUBLIC_KEY_OF_A_WORKER_VPS>
+Endpoint = <PUBLIC_IP_OF_VPS_1>:51820
+AllowedIPs = <PRIVATE_IP_OF_WORKER>/32
+PersistentKeepalive = 25
+```
+
+**On each Worker VPS, create `/etc/wireguard/wg0.conf`:**
+```ini
+[Interface]
+Address = <PRIVATE_IP_FOR_THIS_WORKER>/24
+PrivateKey = <PASTE_PRIVATE_KEY_OF_THIS_VPS>
+ListenPort = 51820
+
+[Peer]
+PublicKey = <PASTE_PUBLIC_KEY_OF_VPS_1_MANAGER>
+Endpoint = <PUBLIC_IP_OF_VPS_1>:51820
+AllowedIPs = 10.0.0.0/24
+PersistentKeepalive = 25
+```
+
+#### 4. Enable IP Forwarding on Manager
+On **VPS-1 (Manager)**, edit `/etc/sysctl.conf`, uncomment `net.ipv4.ip_forward=1`, and run `sudo sysctl -p`.
+
+#### 5. Enable WireGuard and Update `ufw`
+On **all VPSs**:
+```bash
+sudo ufw allow 51820/udp
+sudo wg-quick up wg0
+sudo systemctl enable wg-quick@wg0
+sudo ufw reload
+```
+
+#### 6. Allow docker ports on wireguard's private IP
+on **all VPSs**:
+```bash
+sudo ufw allow from WIREGUARD_PRIVATE_IP to any port 2377 proto tcp
+sudo ufw allow from WIREGUARD_PRIVATE_IP to any port 7946
+sudo ufw allow from WIREGUARD_PRIVATE_IP to any port 4789 proto udp
+```
+
+#### 7. Re-Initialize Swarm over WireGuard
+You must now create your swarm using the private WireGuard IPs.
+- On Manager: `docker swarm init --advertise-addr 10.0.0.1`
+- Use the new join token on all workers.
+
+---
+
 ## Scaling the Workers
 
 If you need to handle more concurrent workflows, you can easily scale up the number of worker services.
