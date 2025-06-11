@@ -1,4 +1,3 @@
-# docker-compose.yml - Place in proxy-traefik/ directory
 services:
   traefik:
     image: traefik:v2.10
@@ -8,20 +7,15 @@ services:
       - "443:443"
     env_file:
       - ../.env
-    environment:
-      - SSL_EMAIL
     command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.caserver=https://dv.acme-v02.api.pki.goog/directory"
-      - "--certificatesresolvers.myresolver.acme.email=${SSL_EMAIL}"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # Cukup beritahu Traefik untuk menggunakan file konfigurasi statis
+      - "--configFile=/etc/traefik/traefik.yml"
     volumes:
+      # Mount file konfigurasi yang baru kita buat ke dalam kontainer
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      # Volume untuk menyimpan sertifikat SSL
       - letsencrypt:/letsencrypt
+      # Volume untuk koneksi ke Docker daemon
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - n8n-network
