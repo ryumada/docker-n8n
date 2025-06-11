@@ -75,35 +75,35 @@ It's time to bring your services online. The order is important. On each respect
     * SSH into VPS 3 and navigate to the `data-postgres/` directory.
     * Run the deployment command:
         ```bash
-        docker-compose up -d
+        docker compose up -d
         ```
 
 2.  **Deploy Redis on VPS 4:**
     * SSH into VPS 4 and navigate to the `data-redis/` directory.
     * Run the deployment command:
         ```bash
-        docker-compose up -d
+        docker compose up -d
         ```
 
 3.  **Deploy the Proxy on VPS 1:**
     * SSH into your Main VPS (VPS 1) and navigate to the `proxy-traefik/` directory.
     * Run the deployment command:
         ```bash
-        docker-compose up -d
+        docker compose up -d
         ```
 
 4.  **Deploy the Main n8n App on VPS 1:**
     * On your Main VPS (VPS 1), navigate to the `n8n-main/` directory.
     * Run the deployment command:
         ```bash
-        docker-compose up -d
+        docker compose up -d
         ```
 
 5.  **Deploy the n8n Worker on VPS 2:**
     * SSH into your Worker VPS (VPS 2) and navigate to the `n8n-worker/` directory.
     * Run the deployment command:
         ```bash
-        docker-compose up -d
+        docker compose up -d
         ```
 
 ---
@@ -126,7 +126,7 @@ If you need to handle more concurrent workflows, you can easily scale up the num
 3.  **Run the scale command:**
     ```bash
     # This example scales to 3 workers. Change the number as needed.
-    docker-compose up -d --scale n8n-worker=3
+    docker compose up -d --scale n8n-worker=3
     ```
 
 Docker Swarm will automatically create the additional worker containers and distribute them across the available VPSs in your swarm. You don't need to specify which machine they run on. You can scale down by running the same command with a lower number.
@@ -143,10 +143,10 @@ By default, binary data (files) from workflows is stored temporarily. For a prod
 2.  Redeploy the `n8n-main` and `n8n-worker` services for the changes to take effect:
     ```bash
     # On VPS 1 in n8n-main/
-    docker-compose up -d --force-recreate
+    docker compose up -d --force-recreate
 
     # On VPS 2 in n8n-worker/
-    docker-compose up -d --force-recreate
+    docker compose up -d --force-recreate
     ```
 
 ### Option 2: Google Cloud Storage (GCS)
