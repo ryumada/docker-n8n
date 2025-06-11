@@ -56,6 +56,45 @@ The swarm allows containers on different machines to communicate securely.
 
 ---
 
+## Step 2.5: Secure the Swarm with a Firewall (Recommended)
+
+For production, it is critical to ensure that the required Docker Swarm ports are only accessible by other nodes in your cluster. This prevents unauthorized access to your swarm's management plane.
+
+The following ports must be open for communication **between all your swarm nodes**:
+* **TCP port `2377`:** For cluster management communication.
+* **TCP and UDP port `7946`:** For communication among nodes.
+* **UDP port `4789`:** For the overlay network traffic.
+
+Here is an example using `ufw` (Uncomplicated Firewall) on Ubuntu. **You must run these commands on every VPS**, replacing the placeholder IPs with your actual server IPs.
+
+**First, get the public IP address for each of your nodes:**
+* **VPS-1 (Manager):** `IP_OF_VPS_1`
+* **VPS-2 (Worker):** `IP_OF_VPS_2`
+* **VPS-3 (Database):** `IP_OF_VPS_3`
+* **VPS-4 (Cache):** `IP_OF_VPS_4`
+
+**Example: Commands to run on VPS-1 (Manager)**
+```bash
+# Allow traffic from the other nodes
+sudo ufw allow from IP_OF_VPS_2 to any port 2377 proto tcp
+sudo ufw allow from IP_OF_VPS_2 to any port 7946
+sudo ufw allow from IP_OF_VPS_2 to any port 4789 proto udp
+
+sudo ufw allow from IP_OF_VPS_3 to any port 2377 proto tcp
+sudo ufw allow from IP_OF_VPS_3 to any port 7946
+sudo ufw allow from IP_OF_VPS_3 to any port 4789 proto udp
+
+sudo ufw allow from IP_OF_VPS_4 to any port 2377 proto tcp
+sudo ufw allow from IP_OF_VPS_4 to any port 7946
+sudo ufw allow from IP_OF_VPS_4 to any port 4789 proto udp
+
+# After adding all rules, reload the firewall
+sudo ufw reload
+```
+**Important:** You must repeat this process on all other nodes. For example, on **VPS-2**, you would add rules to allow traffic *from* `IP_OF_VPS_1`, `IP_OF_VPS_3`, and `IP_OF_VPS_4`.
+
+---
+
 ## Step 3: Create the Encrypted Overlay Network
 
 This special network will span all machines in the swarm, encrypting all application traffic between them. This only needs to be done **once** from the **manager node**.
