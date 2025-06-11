@@ -102,6 +102,14 @@ This special network will span all machines in the swarm, encrypting all applica
 1.  **On your Main VPS (VPS 1):**
     ```bash
     docker network create --driver overlay --opt encrypted --attachable n8n-network
+
+    # If you ecounter context deadline exceeded issue and use wireguard, you can use this instead
+    docker network create \
+        --driver overlay \
+        --opt encrypted \
+        --attachable \
+        --opt com.docker.network.driver.mtu=1420 \
+        n8n-network
     ```
 
 ---
