@@ -16,6 +16,7 @@ services:
       - QUEUE_BULL_REDIS_HOST=redis
     volumes:
       - n8n_worker_data:/home/node/.n8n
+      - n8n_worker_logs:/logs
     networks:
       - n8n-network
 
@@ -25,3 +26,4 @@ networks:
 
 volumes:
   n8n_worker_data:
+  n8n_worker_logs:

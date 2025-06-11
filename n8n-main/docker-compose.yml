@@ -21,9 +21,14 @@ services:
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
     expose:
       - 5678
+    volumes:
+      - n8n_main_logs:/logs
     networks:
       - n8n-network
 
 networks:
   n8n-network:
     external: true
+
+volumes:
+  n8n_main_logs:
