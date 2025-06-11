@@ -14,6 +14,7 @@ services:
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
     volumes:
       - n8n_worker_data:/home/node/.n8n
       - n8n_worker_logs:/logs

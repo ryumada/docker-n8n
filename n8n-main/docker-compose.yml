@@ -18,6 +18,7 @@ services:
       - N8N_PROTOCOL=https
       - NODE_ENV=production
       - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
       - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
     labels:
       - traefik.enable=true
