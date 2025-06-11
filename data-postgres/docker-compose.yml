@@ -4,12 +4,6 @@ services:
     restart: always
     env_file:
       - ../.env
-    environment:
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-      - POSTGRES_DB
-      - POSTGRES_NON_ROOT_USER
-      - POSTGRES_NON_ROOT_PASSWORD
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
