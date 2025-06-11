@@ -2,7 +2,7 @@ services:
   n8n-worker:
     image: n8nio/n8n
     restart: always
-    command: n8n worker
+    command: worker
     env_file:
       - ../.env
     environment:
