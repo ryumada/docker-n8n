@@ -12,9 +12,8 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
-      - GENERIC_TIMEZONE
-      - TZ
     volumes:
       - n8n_worker_data:/home/node/.n8n
     networks:

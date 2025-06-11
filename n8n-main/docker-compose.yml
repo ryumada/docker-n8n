@@ -5,31 +5,19 @@ services:
     env_file:
       - ../.env
     environment:
-      # Database, Auth, and Queue configuration remains the same
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
       - DB_POSTGRESDB_PORT=5432
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER
-      - N8N_BASIC_AUTH_PASSWORD
       - EXECUTIONS_MODE=queue
       - QUEUE_BULL_REDIS_HOST=redis
-      - GENERIC_TIMEZONE
-      - TZ
     labels:
-      # --- Traefik Labels ---
-      # Explicitly enable Traefik for this service
       - "traefik.enable=true"
-      # Create a router and define the rule to match the domain
       - "traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)"
-      # Use the HTTPS entrypoint
       - "traefik.http.routers.n8n.entrypoints=websecure"
-      # Use the 'myresolver' we configured in Traefik for SSL
       - "traefik.http.routers.n8n.tls.certresolver=myresolver"
-      # Tell Traefik which port the n8n service is running on inside the container
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
     expose:
       - 5678

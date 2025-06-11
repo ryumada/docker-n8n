@@ -1,6 +1,6 @@
 # n8n Distributed Deployment Guide
 
-This repository contains the Docker Compose configurations to deploy a scalable, multi-host n8n setup. It uses Traefik as a reverse proxy for automatic SSL and Docker Swarm to create a network that allows services running on different servers to communicate securely.
+This repository contains the Docker Compose configurations to deploy a scalable, multi-host n8n setup. It uses Traefik as a reverse proxy for automatic SSL and Docker Swarm to create a network that allows services running on different servers to communicate securely. This setup is designed for production use, leveraging named volumes for data persistence and reliability.
 
 ---
 
@@ -11,7 +11,8 @@ This repository contains the Docker Compose configurations to deploy a scalable,
 * **VPS 3 (Database):** Runs the PostgreSQL database.
 * **VPS 4 (Cache):** Runs the Redis instance.
 
-*Note: You can combine services onto fewer VPSs if you wish, but this guide assumes a fully distributed four-server setup.*
+* **(Optional) Additional VPSs:** Can be added to the swarm to scale workers further.
+* Note: You can combine services onto fewer VPSs if you wish, but this guide assumes a fully distributed four-server setup.*
 
 ---
 
@@ -19,70 +20,24 @@ This repository contains the Docker Compose configurations to deploy a scalable,
 
 Before you begin, make sure you have the following:
 
-1.  **Four VPSs:** Each running a modern Linux distribution (like Ubuntu 20.04 or later).
-2.  **Docker & Docker Compose:** Installed on all four VPSs.
-3.  **DNS A Record:** A DNS `A` record for your chosen domain (e.g., `n8n.your-domain.com`) pointing to the public IP address of your **Main VPS (VPS 1)**. This is required for Traefik to successfully obtain an SSL certificate.
-4.  **This Git Repository:** Cloned onto each of the four servers.
+1.  **Multiple VPSs:** Each running a modern Linux distribution (like Ubuntu 22.04 or later).
+2.  **Docker & Docker Compose:** Installed on all VPSs.
+3.  **DNS A Record:** A DNS `A` record for your chosen domain (e.g., `n8n.your-domain.com`) pointing to the public IP address of your **Main VPS (VPS 1)**. This is critical for Traefik to successfully obtain an SSL certificate.
+4.  **This Git Repository:** Cloned onto each of the servers that will run a service.
 
 ---
 
 ## Step 1: Prepare the Configuration File
 
-Your `.env` file contains all the critical configuration. Create a file named `.env` in the root of this repository on **each of your four VPSs**. The content should be identical on all servers.
+Your `.env` file contains all the critical configuration. Create a file named `.env` in the root of this repository on **each server where you will run a service**. The content should be identical on all servers. Copy `.env.example` file and rename it to `.env` to start creating your environment file.
 
-Use the `.env.template` file (if one exists) as a guide.
-
-```env
-# .env file
-# Make sure to replace placeholder values
-
-# Domain and SSL
-SUBDOMAIN=n8n
-DOMAIN_NAME=your-domain.com
-SSL_EMAIL=your-email@your-domain.com
-
-# Postgres
-POSTGRES_DB=n8n
-POSTGRES_USER=n8n
-POSTGRES_PASSWORD=a-very-secure-password
-POSTGRES_NON_ROOT_USER=n8n_user
-POSTGRES_NON_ROOT_PASSWORD=a-different-secure-password
-
-# n8n Basic Auth
-N8N_BASIC_AUTH_USER=your-n8n-user
-N8N_BASIC_AUTH_PASSWORD=another-secure-password
-
-# Timezone
-GENERIC_TIMEZONE=America/New_York
-TZ=America/New_York
-
-# ------------------------------------------------------------------
-# Optional: Binary Data Storage (Uncomment and configure one option)
-# ------------------------------------------------------------------
-
-# Option 1: AWS S3
-#N8N_BINARY_DATA_STORAGE="s3"
-#N8N_S3_BUCKET_NAME="your-s3-bucket-name"
-#N8N_S3_REGION="your-s3-bucket-region"
-#N8N_S3_ACCESS_KEY_ID="your-access-key-id"
-#N8N_S3_SECRET_ACCESS_KEY="your-secret-access-key"
-# For S3-compatible storage like MinIO, add the endpoint URL:
-#N8N_S3_ENDPOINT="[https://your-minio-endpoint.com](https://your-minio-endpoint.com)"
-
-# Option 2: Google Cloud Storage (GCS)
-#N8N_BINARY_DATA_STORAGE="gcs"
-#N8N_GCS_BUCKET_NAME="your-gcs-bucket-name"
-# See the "Configuring Binary Data Storage" section for GCS setup
-#N8N_GCS_KEY_FILE_PATH="/path/to/your/google-credentials.json"
-```
-
-**Security Note:** The `.env` file is listed in `.gitignore` and should never be committed to your repository.
+**Security Note:** The `.env` file is listed in `.gitignore` and must never be committed to your repository.
 
 ---
 
 ## Step 2: Set Up the Docker Swarm
 
-The swarm allows containers on different machines to communicate.
+The swarm allows containers on different machines to communicate securely.
 
 1.  **SSH into your Main VPS (VPS 1).** This will be our "manager" node.
 2.  **Initialize the Swarm:**
@@ -97,25 +52,24 @@ The swarm allows containers on different machines to communicate.
     * SSH into **VPS 2 (Worker)** and paste the join command.
     * SSH into **VPS 3 (Database)** and paste the join command.
     * SSH into **VPS 4 (Cache)** and paste the join command.
-
-All four servers are now part of the same cluster.
+    * Repeat for any additional VPSs you want to add to the cluster.
 
 ---
 
-## Step 3: Create the Overlay Network
+## Step 3: Create the Encrypted Overlay Network
 
-This special network will span all machines in the swarm. This only needs to be done once from the **manager node**.
+This special network will span all machines in the swarm, encrypting all application traffic between them. This only needs to be done **once** from the **manager node**.
 
 1.  **On your Main VPS (VPS 1):**
     ```bash
-    docker network create --driver overlay n8n-network
+    docker network create --driver overlay --opt encrypted n8n-network
     ```
 
 ---
 
 ## Step 4: Deploy Your Services
 
-It's time to bring your services online. The order is important. On each VPS, navigate to the correct directory before running the command.
+It's time to bring your services online. The order is important. On each respective VPS, navigate into the correct directory from the repository before running the command.
 
 1.  **Deploy PostgreSQL on VPS 3:**
     * SSH into VPS 3 and navigate to the `data-postgres/` directory.
@@ -156,12 +110,10 @@ It's time to bring your services online. The order is important. On each VPS, na
 
 ## Step 5: Verify the Deployment
 
-After a few moments for the proxy to acquire SSL certificates, your setup should be complete.
+After a few moments for the proxy to acquire an SSL certificate, your setup should be complete.
 
 * You can run `docker ps` on each machine to see the respective containers running.
 * Navigate to your domain (`https://n8n.your-domain.com`). You should see the n8n login screen, protected by the basic authentication you configured.
-
-You now have a fully distributed, scalable n8n deployment!
 
 ---
 
@@ -183,35 +135,27 @@ Docker Swarm will automatically create the additional worker containers and dist
 
 ## Configuring Binary Data Storage (Optional but Recommended)
 
-By default, binary data (files) from workflows is stored on the local filesystem of the worker that processes it. In a multi-host environment, it's highly recommended to use a centralized object store so all components have access to the same files.
+By default, binary data (files) from workflows is stored temporarily. For a production environment, you must use a centralized object store so all components have access to the same files. Choose one of the options below.
 
 ### Option 1: AWS S3 or S3-Compatible Storage
 
-1.  Add the following variables to your root `.env` file and fill in your details:
-    ```env
-    N8N_BINARY_DATA_STORAGE="s3"
-    N8N_S3_BUCKET_NAME="your-s3-bucket-name"
-    N8N_S3_REGION="your-s3-bucket-region"
-    N8N_S3_ACCESS_KEY_ID="your-access-key-id"
-    N8N_S3_SECRET_ACCESS_KEY="your-secret-access-key"
-    # For S3-compatible storage like MinIO, add the endpoint URL:
-    # N8N_S3_ENDPOINT="[https://your-minio-endpoint.com](https://your-minio-endpoint.com)"
+1.  Uncomment and fill in the S3 variables in your root `.env` file.
+2.  Redeploy the `n8n-main` and `n8n-worker` services for the changes to take effect:
+    ```bash
+    # On VPS 1 in n8n-main/
+    docker-compose up -d --force-recreate
+
+    # On VPS 2 in n8n-worker/
+    docker-compose up -d --force-recreate
     ```
-2.  Redeploy the `n8n-main` and `n8n-worker` services for the changes to take effect.
 
 ### Option 2: Google Cloud Storage (GCS)
 
 Configuring GCS requires mounting a service account key file into the n8n containers.
 
 1.  **Create and download a Service Account JSON key** from your Google Cloud project with permissions to write to your GCS bucket.
-2.  **Copy the key file** to the `n8n-main` and `n8n-worker` directories on their respective VPSs. For example, save it as `google-credentials.json`.
-3.  **Add the GCS variables** to your root `.env` file:
-    ```env
-    N8N_BINARY_DATA_STORAGE="gcs"
-    N8N_GCS_BUCKET_NAME="your-gcs-bucket-name"
-    # This path is inside the container
-    N8N_GCS_KEY_FILE_PATH="/app/google-credentials.json"
-    ```
+2.  **Copy the key file** to the `n8n-main` directory on VPS 1 and the `n8n-worker` directory on VPS 2. For example, save it as `google-credentials.json` in both locations.
+3.  **Uncomment and fill in the GCS variables** in your root `.env` file.
 4.  **Modify two files** to mount the key file into the containers:
     * In `n8n-main/docker-compose.yml`, add a `volumes` directive to the `n8n-main` service:
         ```yaml
@@ -220,18 +164,19 @@ Configuring GCS requires mounting a service account key file into the n8n contai
             #... existing configuration ...
             volumes:
               - ./google-credentials.json:/app/google-credentials.json:ro
+              - n8n_main_logs:/logs
         ```
-    * In `n8n-worker/docker-compose.yml`, add a similar `volumes` directive to the `n8n-worker` service:
+    * In `n8n-worker/docker-compose.yml`, add a similar `volumes` directive to the `n8n-worker` service (note that this file already has a volumes section, so just add the new line):
         ```yaml
         services:
           n8n-worker:
             #... existing configuration ...
-            # You must add this volume mount to mount the credentials file
             volumes:
+              - n8n_worker_data:/home/node/.n8n
               - ./google-credentials.json:/app/google-credentials.json:ro
-              - ./n8n-worker-data:/home/node/.n8n
+              - n8n_worker_logs:/logs
         ```
-5.  Redeploy the `n8n-main` and `n8n-worker` services for the changes to take effect.
+5.  Redeploy the `n8n-main` and `n8n-worker` services for the changes to take effect as shown in the S3 instructions.
 
 ---
 
