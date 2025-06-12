@@ -45,7 +45,13 @@ The following ports must be open for communication **between all your swarm node
 * **TCP and UDP port `7946`:** For communication among nodes.
 * **UDP port `4789`:** For the overlay network traffic.
 
-Here is an example using `ufw` (Uncomplicated Firewall) on Ubuntu. **You must run these commands on every VPS**, replacing the placeholder IPs with your actual server IPs.
+The easiest way to setup firewall for `docker swarm` is by running `./scripts/create_docker_swarm_ufw_app_profile.sh` file to create ufw app profile on Ubuntu, then you can use the app profile to allow connection.
+
+```bash
+sudo ufw allow from IP_OF_VPS to any app "Docker Swarm"
+```
+
+Or, here is an example using `ufw` (Uncomplicated Firewall) on Ubuntu. **You must run these commands on every VPS**, replacing the placeholder IPs with your actual server IPs.
 
 **First, get the public IP address for each of your nodes:**
 * **VPS-1 (Manager):** `IP_OF_VPS_1`
