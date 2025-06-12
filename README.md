@@ -97,10 +97,12 @@ The swarm allows containers on different machines to communicate securely.
 2.  **Initialize the Swarm:**
     ```bash
     docker swarm init
+
+    docker swarm init --advertise-addr <WIREGUARD_PRIVATE_IP> --data-path-addr WIREGUARD_PRIVATE_IP
     ```
 3.  **Copy the Join Token:** The previous command will output a `docker swarm join` command. Copy the entire line. It will look like this:
     ```
-    docker swarm join --token SWMTKN-1-xxxxxxxx... <MANAGER_IP>:<PORT>
+    docker swarm join --token SWMTKN-1-xxxxxxxx... <MANAGER_IP>:<PORT> --data-path-addr PRIVATE_IP_THIS_VPS
     ```
 4.  **Join Worker Nodes:** SSH into all other VPSs (2, 3, 4, etc.) and run the join command you just copied.
     * SSH into **VPS 2 (Worker)** and paste the join command.
@@ -142,13 +144,20 @@ First, you need to make sure the MTU size of your network you want to use using 
 After that, you can create the overlay network that will span over docker swarm nodes.
 
     ```bash
-    # If the MTU size is 1500
+    # If the MTU size is 1500 and the router support Protocol 50 (ESP) for secure network
     docker network create --driver overlay --opt encrypted --attachable n8n-network
 
-    # If you ecounter context deadline exceeded issue and use wireguard or you use the network , you can use this instead
+    # If you ecounter context deadline exceeded issue and use wireguard or you use the network and the router support Protocol 50 (ESP) for secure network, you can use this instead
     docker network create \
         --driver overlay \
         --opt encrypted \
+        --attachable \
+        --opt com.docker.network.driver.mtu=1420 \
+        n8n-network
+
+    # If your router does not support Protocol 50 (ESP) and you use Wireguard (don't use '--opt encrypted')
+    docker network create \
+        --driver overlay \
         --attachable \
         --opt com.docker.network.driver.mtu=1420 \
         n8n-network
