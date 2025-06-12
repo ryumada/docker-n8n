@@ -79,6 +79,14 @@ sudo ufw reload
 ```
 **Important:** You must repeat this process on all other nodes. For example, on **VPS-2**, you would add rules to allow traffic *from* `IP_OF_VPS_1`, `IP_OF_VPS_3`, and `IP_OF_VPS_4`.
 
+Then, check with netcat (`nc`) to see if the port is successfully allowed from your docker swarm peers.
+```bash
+nc -vz IP_OF_VPS 2377 # to call to docker swarm manager node only
+nc -vz IP_OF_VPS 7946
+nc -vzu IP_OF_VPS 7946
+nc -vzu IP_OF_VPS 4789
+```
+
 ---
 
 ## Step 3: Set Up the Docker Swarm
