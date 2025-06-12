@@ -12,7 +12,8 @@ This repository contains the Docker Compose configurations to deploy a scalable,
 * **VPS 4 (Cache):** Runs the Redis instance.
 
 * **(Optional) Additional VPSs:** Can be added to the swarm to scale workers further.
-* Note: You can combine services onto fewer VPSs if you wish, but this guide assumes a fully distributed four-server setup.*
+
+*Note: You can combine services onto fewer VPSs if you wish, but this guide assumes a fully distributed four-server setup.*
 
 ---
 
@@ -29,34 +30,13 @@ Before you begin, make sure you have the following:
 
 ## Step 1: Prepare the Configuration File
 
-Your `.env` file contains all the critical configuration. Create a file named `.env` in the root of this repository on **each server where you will run a service**. The content should be identical on all servers. Copy `.env.example` file and rename it to `.env` to start creating your environment file.
+On your **manager node (VPS 1)**, create a file named `.env` in the root of this repository. The `docker stack deploy` command will use this file for all services. Copy `.env.example` and rename it to `.env` to start.
 
 **Security Note:** The `.env` file is listed in `.gitignore` and must never be committed to your repository.
 
 ---
 
-## Step 2: Set Up the Docker Swarm
-
-The swarm allows containers on different machines to communicate securely.
-
-1.  **SSH into your Main VPS (VPS 1).** This will be our "manager" node.
-2.  **Initialize the Swarm:**
-    ```bash
-    docker swarm init
-    ```
-3.  **Copy the Join Token:** The previous command will output a `docker swarm join` command. Copy the entire line. It will look like this:
-    ```
-    docker swarm join --token SWMTKN-1-xxxxxxxx... <MANAGER_IP>:<PORT>
-    ```
-4.  **Join the Swarm from Other Nodes:**
-    * SSH into **VPS 2 (Worker)** and paste the join command.
-    * SSH into **VPS 3 (Database)** and paste the join command.
-    * SSH into **VPS 4 (Cache)** and paste the join command.
-    * Repeat for any additional VPSs you want to add to the cluster.
-
----
-
-## Step 2.5: Secure the Swarm with a Firewall (Recommended)
+## Step 2: Secure the Swarm with a Firewall (Recommended)
 
 For production, it is critical to ensure that the required Docker Swarm ports are only accessible by other nodes in your cluster. This prevents unauthorized access to your swarm's management plane.
 
@@ -95,15 +75,54 @@ sudo ufw reload
 
 ---
 
-## Step 3: Create the Encrypted Overlay Network
+## Step 3: Set Up the Docker Swarm
+
+The swarm allows containers on different machines to communicate securely.
+
+1.  **SSH into your Main VPS (VPS 1).** This will be our "manager" node.
+2.  **Initialize the Swarm:**
+    ```bash
+    docker swarm init
+    ```
+3.  **Copy the Join Token:** The previous command will output a `docker swarm join` command. Copy the entire line. It will look like this:
+    ```
+    docker swarm join --token SWMTKN-1-xxxxxxxx... <MANAGER_IP>:<PORT>
+    ```
+4.  **Join Worker Nodes:** SSH into all other VPSs (2, 3, 4, etc.) and run the join command you just copied.
+    * SSH into **VPS 2 (Worker)** and paste the join command.
+    * SSH into **VPS 3 (Database)** and paste the join command.
+    * SSH into **VPS 4 (Cache)** and paste the join command.
+    * Repeat for any additional VPSs you want to add to the cluster.
+
+---
+
+## Step 4: Create the Encrypted Overlay Network
 
 This special network will span all machines in the swarm, encrypting all application traffic between them. This only needs to be done **once** from the **manager node**.
 
 1.  **On your Main VPS (VPS 1):**
+
+First, you need to make sure the MTU size of your network you want to use using `ip a` or `ipconfig`. This is the example output of `ip a`:
+
+    ```txt
+    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000 # <<<< See this line there is MTU size right here and it says the size of MTU of this network is 1500.
+        link/ether xx:xx:xx:xx:xx:xx brd ff:ff:ff:ff:ff:ff
+        altname enp0s18
+        inet 192.168.1.432/22 brd 192.168.1.255 scope global eth0
+        valid_lft forever preferred_lft forever
+        inet6 xxxx:xxxx:xxxx:xxxx::1/64 scope global
+        valid_lft forever preferred_lft forever
+        inet6 xxxx::xxxx:xxxx:xxxx:xxxx/64 scope link
+        valid_lft forever preferred_lft forever
+    ```
+
+After that, you can create the overlay network that will span over docker swarm nodes.
+
     ```bash
+    # If the MTU size is 1500
     docker network create --driver overlay --opt encrypted --attachable n8n-network
 
-    # If you ecounter context deadline exceeded issue and use wireguard, you can use this instead
+    # If you ecounter context deadline exceeded issue and use wireguard or you use the network , you can use this instead
     docker network create \
         --driver overlay \
         --opt encrypted \
@@ -114,53 +133,42 @@ This special network will span all machines in the swarm, encrypting all applica
 
 ---
 
-## Step 4: Deploy Your Services
+## Step 5: Deploy Your Services
 
-It's time to bring your services online. The order is important. On each respective VPS, navigate into the correct directory from the repository before running the command.
+It's time to bring your application to life. All of the following commands must be run from the **manager node (VPS 1)** and from the **root directory** of this repository.
 
-1.  **Deploy PostgreSQL on VPS 3:**
-    * SSH into VPS 3 and navigate to the `data-postgres/` directory.
-    * Run the deployment command:
-        ```bash
-        docker compose up -d
-        ```
+We will deploy all services into a single "stack" named `n8n`.
 
-2.  **Deploy Redis on VPS 4:**
-    * SSH into VPS 4 and navigate to the `data-redis/` directory.
-    * Run the deployment command:
-        ```bash
-        docker compose up -d
-        ```
+```bash
+# Navigate to the root of your repository on the manager node
+cd /path/to/your/n8n-deployment/
 
-3.  **Deploy the Proxy on VPS 1:**
-    * SSH into your Main VPS (VPS 1) and navigate to the `proxy-traefik/` directory.
-    * Run the deployment command:
-        ```bash
-        docker compose up -d
-        ```
-
-4.  **Deploy the Main n8n App on VPS 1:**
-    * On your Main VPS (VPS 1), navigate to the `n8n-main/` directory.
-    * Run the deployment command:
-        ```bash
-        docker compose up -d
-        ```
-
-5.  **Deploy the n8n Worker on VPS 2:**
-    * SSH into your Worker VPS (VPS 2) and navigate to the `n8n-worker/` directory.
-    * Run the deployment command:
-        ```bash
-        docker compose up -d
-        ```
+# Deploy each component to the 'n8n' stack
+docker stack deploy -c data-postgres/docker-compose.yml n8n
+docker stack deploy -c data-redis/docker-compose.yml n8n
+docker stack deploy -c proxy-traefik/docker-compose.yml n8n
+docker stack deploy -c n8n-main/docker-compose.yml n8n
+docker stack deploy -c n8n-worker/docker-compose.yml n8n
+```
+*Note: Using the same stack name (`n8n`) merges all services into one logical application, allowing them to communicate seamlessly.*
 
 ---
 
-## Step 5: Verify the Deployment
+## Step 6: Verify the Deployment
 
-After a few moments for the proxy to acquire an SSL certificate, your setup should be complete.
+1.  **Check Service Status:** From the manager node, run:
+    ```bash
+    docker service ls
+    ```
+    You should see a list of all your services (e.g., `n8n_postgres`, `n8n_traefik`, `n8n_n8n-main`). Check the `REPLICAS` column. `1/1` means the service is running correctly.
 
-* You can run `docker ps` on each machine to see the respective containers running.
-* Navigate to your domain (`https://n8n.your-domain.com`). You should see the n8n login screen, protected by the basic authentication you configured.
+2.  **Inspect a Specific Service:** To see where a service is running, use:
+    ```bash
+    # Example for the n8n-main service
+    docker service ps n8n_n8n-main
+    ```
+
+3.  **Check n8n UI:** Navigate to your domain (`https://n8n.your-domain.com`). After a moment for SSL certificate generation, you should see the n8n login screen.
 
 ---
 
@@ -250,19 +258,20 @@ You must now create your swarm using the private WireGuard IPs.
 
 ---
 
-## Scaling the Workers
+### Scaling the Workers
 
-If you need to handle more concurrent workflows, you can easily scale up the number of worker services.
+To handle more workflows, you can easily scale up the worker service.
+```bash
+# This example scales to 3 workers. Change the number as needed.
+docker service scale n8n_n8n-worker=3
+```
 
-1.  **SSH into any node in your Docker Swarm** (the manager node, VPS 1, is a good choice).
-2.  **Navigate to the `n8n-worker/` directory** within your cloned repository.
-3.  **Run the scale command:**
-    ```bash
-    # This example scales to 3 workers. Change the number as needed.
-    docker compose up -d --scale n8n-worker=3
-    ```
-
-Docker Swarm will automatically create the additional worker containers and distribute them across the available VPSs in your swarm. You don't need to specify which machine they run on. You can scale down by running the same command with a lower number.
+### Updating a Service
+If you make a change to a `.env` variable or a `docker-compose.yml` file, simply re-run the `docker stack deploy` command for that component. Swarm will automatically apply the changes in a rolling-update fashion.
+```bash
+# Example: Re-deploying n8n-main after an .env change
+docker stack deploy -c n8n-main/docker-compose.yml n8n
+```
 
 ---
 
