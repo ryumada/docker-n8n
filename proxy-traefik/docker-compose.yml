@@ -1,6 +1,7 @@
 services:
   traefik:
     image: traefik:v2.10
+    network_mode: host
     restart: always
     ports:
       - "80:80"
@@ -18,21 +19,16 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.websecure.address=:443"
+      - "--providers.docker.swarmMode=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker=true"
     volumes:
       - letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - n8n-network
     deploy:
       placement:
         constraints:
           - "node.labels.role.proxy == true"
-
-networks:
-  n8n-network:
-    external: true
 
 volumes:
   letsencrypt:

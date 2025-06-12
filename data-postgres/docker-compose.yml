@@ -1,9 +1,12 @@
 services:
   postgres:
     image: postgres:14
+    network_mode: host
     restart: always
     env_file:
       - ../.env
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -11,16 +14,10 @@ services:
       timeout: 10s
       retries: 5
       start_period: 10s
-    networks:
-      - n8n-network
     deploy:
       placement:
         constraints:
           - "node.labels.role.database == true"
-
-networks:
-  n8n-network:
-    external: true
 
 volumes:
   postgres_data:
