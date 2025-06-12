@@ -25,6 +25,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - n8n-network
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.role.proxy == true"
 
 networks:
   n8n-network:

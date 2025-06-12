@@ -6,6 +6,10 @@ services:
       - redis_data:/data
     networks:
       - n8n-network
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.role.redis == true"
 
 networks:
   n8n-network:

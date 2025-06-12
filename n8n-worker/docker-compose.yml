@@ -20,6 +20,10 @@ services:
       - n8n_worker_logs:/logs
     networks:
       - n8n-network
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.role.worker == true"
 
 networks:
   n8n-network:

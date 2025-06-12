@@ -41,6 +41,10 @@ services:
       - n8n_main_logs:/logs
     networks:
       - n8n-network
+    deploy:
+      placement:
+        constraints:
+          - "node.labels.role.main == true"
 
 networks:
   n8n-network:

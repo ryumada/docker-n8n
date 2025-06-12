@@ -107,6 +107,15 @@ The swarm allows containers on different machines to communicate securely.
     * SSH into **VPS 3 (Database)** and paste the join command.
     * SSH into **VPS 4 (Cache)** and paste the join command.
     * Repeat for any additional VPSs you want to add to the cluster.
+5.  **Setup Node Labels**
+    * You can see the `docker-compose.yml` file in each stack to see what labels should be added into the docker swarm nodes. Add the label to the node where you want to place the stack to.
+    ```bash
+    docker node update --label-add role.database=true database_node_name
+    docker node update --label-add role.redis=true redis_node_name
+    docker node update --label-add role.main=true main_node_name
+    docker node update --label-add role.worker=true worker_node_name
+    docker node update --label-add role.proxy=true proxy_node_name
+    ```
 
 ---
 
