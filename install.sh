@@ -36,9 +36,9 @@ function main() {
   local ENV_FILE="${PATH_TO_ROOT_REPOSITORY}/.env"
 
   log_info "Validate .env file content"
-  if grep -q "enter-your-" "$ENV_FILE"; then
+  if grep -q "enter-" "$ENV_FILE"; then
     log_error "Your .env file still contains default placeholder values."
-    grep "enter-your-" "$ENV_FILE" | while read -r line ; do
+    grep "enter-" "$ENV_FILE" | while read -r line ; do
       log_error "  - Please configure: ${line}"
     done
     log_error "Exiting. Please update the .env file and re-run the script again."
