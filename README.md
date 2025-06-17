@@ -130,15 +130,9 @@ This special network will span all machines in the swarm, encrypting all applica
 First, you need to make sure the MTU size of your network you want to use using `ip a` or `ipconfig`. This is the example output of `ip a`:
 
     ```txt
-    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000 # <<<< See this line there is MTU size right here and it says the size of MTU of this network is 1500.
-        link/ether xx:xx:xx:xx:xx:xx brd ff:ff:ff:ff:ff:ff
-        altname enp0s18
-        inet 192.168.1.432/22 brd 192.168.1.255 scope global eth0
-        valid_lft forever preferred_lft forever
-        inet6 xxxx:xxxx:xxxx:xxxx::1/64 scope global
-        valid_lft forever preferred_lft forever
-        inet6 xxxx::xxxx:xxxx:xxxx:xxxx/64 scope link
-        valid_lft forever preferred_lft forever
+    # See this line below is MTU size right here and it says the size of MTU of this network is 1500.
+    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+        ...
     ```
 
 After that, you can create the overlay network that will span over docker swarm nodes.
