@@ -23,6 +23,7 @@ function main() {
   if [ -f "$PATH_TO_ROOT_REPOSITORY/.env" ]; then
     echo "$(getDate) Backup current .env file"
     cp .env .env.bak
+    chown "$REPOSITORY_OWNER": .env.bak
   else
     echo "$(getDate) .env file not found. Backup skipped"
   fi
