@@ -22,8 +22,9 @@ services:
       - QUEUE_BULL_REDIS_HOST=redis
       - QUEUE_BULL_REDIS_PORT=6379
       - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
-      # Enabe this variable below to test your worker successfully connected to the main worker. You need to see the log of the worker.
-      # - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+      # This variable below is used to test your worker successfully connected to the main worker. You need to see the log of the worker.
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+
     labels:
       - traefik.enable=true
       - traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)
@@ -45,6 +46,11 @@ services:
       - n8n_main_logs:/logs
     networks:
       - n8n-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       placement:
         constraints:
